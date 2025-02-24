@@ -166,15 +166,15 @@
             if (overtime <= 8) {
                 totalCost = overtime * baseRate;
                 breakdown.push(`${overtime.toFixed(2)} ч × ${baseRate} руб/ч (100%) = ${(overtime * baseRate).toFixed(2)} руб`);
-            } else if (overtime <= 14) {
+            } else if (overtime <= 13) {
                 totalCost = (8 * baseRate) + ((overtime - 8) * baseRate * 2);
                 breakdown.push(`8 ч × ${baseRate} руб/ч (100%) = ${(8 * baseRate).toFixed(2)} руб`);
                 breakdown.push(`${(overtime - 8).toFixed(2)} ч × ${baseRate * 2} руб/ч (200%) = ${((overtime - 8) * baseRate * 2).toFixed(2)} руб`);
             } else {
-                totalCost = (8 * baseRate) + (6 * baseRate * 2) + ((overtime - 14) * baseRate * 4);
+                totalCost = (8 * baseRate) + (5 * baseRate * 2) + ((overtime - 13) * baseRate * 4);
                 breakdown.push(`8 ч × ${baseRate} руб/ч (100%) = ${(8 * baseRate).toFixed(2)} руб`);
-                breakdown.push(`6 ч × ${baseRate * 2} руб/ч (200%) = ${(6 * baseRate * 2).toFixed(2)} руб`);
-                breakdown.push(`${(overtime - 14).toFixed(2)} ч × ${baseRate * 4} руб/ч (400%) = ${((overtime - 14) * baseRate * 4).toFixed(2)} руб`);
+                breakdown.push(`5 ч × ${baseRate * 2} руб/ч (200%) = ${(5 * baseRate * 2).toFixed(2)} руб`);
+                breakdown.push(`${(overtime - 13).toFixed(2)} ч × ${baseRate * 4} руб/ч (400%) = ${((overtime - 13) * baseRate * 4).toFixed(2)} руб`);
             }
             return { totalCost, breakdown };
         }
