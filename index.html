@@ -184,7 +184,7 @@
             const firstName = document.getElementById("firstName").value;
             const lastName = document.getElementById("lastName").value;
             const position = document.getElementById("position").value;
-            const baseShift = parseFloat(document.getElementById("baseShift").value);
+            let baseShift = parseFloat(document.getElementById("baseShift").value);
             const startTime = new Date(document.getElementById("startTime").value);
             const endTime = new Date(document.getElementById("endTime").value);
             const shiftCost = parseFloat(document.getElementById("shiftCost").value);
@@ -201,6 +201,13 @@
             if (endTime <= startTime) {
                 resultDiv.innerHTML = "Время окончания должно быть позже начала.";
                 return;
+            }
+
+            // Проверка ночной смены (16:00 - 03:59)
+            const startHour = startTime.getHours();
+            const isNightShift = (startHour >= 16 || startHour < 4);
+            if (isNightShift) {
+                baseShift -= 1; // Уменьшаем базовую смену на 1 час
             }
 
             // Расчет времени
@@ -249,7 +256,7 @@
 
             const result = `
                 <div class="section">
-                    <strong>Проект:</strong> ${project} (${startTime.toLocaleString()} - ${endTime.toLocaleString()})
+                    <strong>Проект:</strong> ${project} (${startTime.toLocaleString()} - ${endTime.toLocaleString()})${isNightShift ? " (ночная смена)" : ""}
                 </div>
                 <div class="section">
                     <strong>Сотрудник:</strong> ${firstName} ${lastName} (${position})
@@ -261,7 +268,7 @@
                     <strong>Переработка:</strong> ${overtimeFormatted}${lunchBreak ? " (текущий обед)" : ""}
                 </div>
                 <div class="section">
-                    <strong>Стоимость базовой смены:</strong> ${baseShiftCost} руб
+                    <strong>Стоимость базовой смены:</strong> ${baseShiftCost} руб${isNightShift ? " (ночная смена, базовая смена уменьшена на 1 час)" : ""}
                 </div>
                 <div class="section">
                     <strong>Стоимость переработки:</strong> ${overtimeTotalCost.toFixed(2)} руб<br>  ${overtimeBreakdown.join("<br>  ")}
@@ -288,6 +295,7 @@
                 lastName,
                 position,
                 baseShift,
+                isNightShift,
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
                 totalHours: totalHours.toFixed(2),
