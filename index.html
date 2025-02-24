@@ -30,15 +30,15 @@
             border-radius: 5px;
             box-sizing: border-box;
         }
-        .equipment-item {
+        .item {
             display: flex;
             gap: 10px;
             margin-bottom: 10px;
         }
-        .equipment-item input {
+        .item input {
             width: 70%;
         }
-        .equipment-item button {
+        .item button {
             width: 20%;
             padding: 5px;
         }
@@ -57,6 +57,14 @@
         #result {
             margin-top: 20px;
             font-size: 16px;
+            line-height: 1.5;
+        }
+        #result strong {
+            font-weight: bold;
+            color: #333;
+        }
+        #result .section {
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -91,17 +99,23 @@
         <label>Стоимость часа переработки (руб):</label>
         <input type="number" id="overtimeCost" min="0" step="1" placeholder="Например, 300">
 
-        <label><input type="checkbox" id="lunchBreak"> Текущий обед (-1 час)</label>
+        <label><input type="checkbox" id="lunchBreak"> Текущий обед (+1 час переработки)</label>
 
         <label>Погрузка/разгрузка (руб):</label>
         <input type="number" id="loadingCost" min="0" step="1" placeholder="Стоимость">
 
-        <label>Такси, транспорт (руб):</label>
-        <input type="number" id="transportCost" min="0" step="1" placeholder="Стоимость">
+        <label>Такси/транспорт:</label>
+        <div id="transportList">
+            <div class="item">
+                <input type="text" class="transport-name" placeholder="Название">
+                <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
+            </div>
+        </div>
+        <button onclick="addTransport()">Добавить транспорт</button>
 
         <label>Дополнительное оборудование:</label>
         <div id="equipmentList">
-            <div class="equipment-item">
+            <div class="item">
                 <input type="text" class="equipment-name" placeholder="Название">
                 <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
             </div>
@@ -118,15 +132,51 @@
         tg.ready();
         tg.expand();
 
+        function addTransport() {
+            const transportList = document.getElementById("transportList");
+            const newItem = document.createElement("div");
+            newItem.className = "item";
+            newItem.innerHTML = `
+                <input type="text" class="transport-name" placeholder="Название">
+                <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
+            `;
+            transportList.appendChild(newItem);
+        }
+
         function addEquipment() {
             const equipmentList = document.getElementById("equipmentList");
             const newItem = document.createElement("div");
-            newItem.className = "equipment-item";
+            newItem.className = "item";
             newItem.innerHTML = `
                 <input type="text" class="equipment-name" placeholder="Название">
                 <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
             `;
             equipmentList.appendChild(newItem);
+        }
+
+        function formatTime(hours) {
+            const h = Math.floor(hours);
+            const m = Math.round((hours - h) * 60);
+            return `${h} ч ${m} мин`;
+        }
+
+        function calculateOvertimeCost(overtime, baseRate) {
+            let totalCost = 0;
+            let breakdown = [];
+            if (overtime <= 8) {
+                totalCost = overtime * baseRate;
+                breakdown.push(`${overtime.toFixed(2)} ч × ${baseRate} руб/ч (100%) = ${(overtime * baseRate).toFixed(2)} руб`);
+            } else if (overtime <= 14) {
+                totalCost = (8 * baseRate) + ((overtime - 8) * baseRate * 2);
+                breakdown.push(`8 ч × ${baseRate} руб/ч (100%) = ${(8 * baseRate).toFixed(2)} руб`);
+                breakdown.push(`${(overtime - 8).toFixed(2)} ч × ${baseRate * 2} руб/ч (200%) = ${((overtime - 8) * baseRate * 2).toFixed(2)} руб`);
+            } else {
+                totalCost = (8 * baseRate) + (6 * baseRate * 2) + ((overtime - 14) * baseRate * 4);
+                breakdown.push(`8 ч × ${baseRate} руб/ч (100%) = ${(8 * baseRate).toFixed(2)} руб`);
+                breakdown.push(`6 ч × ${baseRate * 2} руб/ч (200%) = ${(6 * baseRate * 2).toFixed(2)} руб`);
+                breakdown.push(`${(overtime - 14).toFixed(2)} ч × ${baseRate * 4} руб/ч (400%) = ${((overtime - 14) * baseRate * 4).toFixed(2)} руб`);
+            }
+            return { totalCost, breakdown };
         }
 
         function calculateShift() {
@@ -141,7 +191,6 @@
             const overtimeCost = parseFloat(document.getElementById("overtimeCost").value);
             const lunchBreak = document.getElementById("lunchBreak").checked;
             const loadingCost = parseFloat(document.getElementById("loadingCost").value) || 0;
-            const transportCost = parseFloat(document.getElementById("transportCost").value) || 0;
             const resultDiv = document.getElementById("result");
 
             // Валидация
@@ -149,50 +198,90 @@
                 resultDiv.innerHTML = "Пожалуйста, заполните все обязательные поля корректно.";
                 return;
             }
-
             if (endTime <= startTime) {
                 resultDiv.innerHTML = "Время окончания должно быть позже начала.";
                 return;
             }
 
             // Расчет времени
-            let diffMs = endTime - startTime;
-            let totalHours = diffMs / (1000 * 60 * 60);
-            if (lunchBreak) totalHours -= 1; // Уменьшаем на 1 час, если обед
-            const overtime = totalHours > baseShift ? totalHours - baseShift : 0;
+            const diffMs = endTime - startTime;
+            const totalHours = diffMs / (1000 * 60 * 60);
+            let overtime = totalHours > baseShift ? totalHours - baseShift : 0;
+            if (lunchBreak) overtime += 1;
 
-            // Расчет стоимости
+            // Расчет стоимости с прогрессивной шкалой
             const baseShiftCost = shiftCost;
-            const overtimeTotalCost = overtime * overtimeCost;
-            let equipmentCost = 0;
-            document.querySelectorAll(".equipment-cost").forEach(input => {
-                equipmentCost += parseFloat(input.value) || 0;
+            const overtimeResult = calculateOvertimeCost(overtime, overtimeCost);
+            const overtimeTotalCost = overtimeResult.totalCost;
+            const overtimeBreakdown = overtimeResult.breakdown;
+
+            let transportCost = 0;
+            const transportItems = [];
+            document.querySelectorAll("#transportList .item").forEach(item => {
+                const name = item.querySelector(".transport-name").value;
+                const cost = parseFloat(item.querySelector(".transport-cost").value) || 0;
+                if (name || cost) {
+                    transportItems.push({ name, cost });
+                    transportCost += cost;
+                }
             });
+
+            let equipmentCost = 0;
+            const equipmentItems = [];
+            document.querySelectorAll("#equipmentList .item").forEach(item => {
+                const name = item.querySelector(".equipment-name").value;
+                const cost = parseFloat(item.querySelector(".equipment-cost").value) || 0;
+                if (name || cost) {
+                    equipmentItems.push({ name, cost });
+                    equipmentCost += cost;
+                }
+            });
+
             const totalCost = baseShiftCost + overtimeTotalCost + loadingCost + transportCost + equipmentCost;
 
+            // Форматирование времени
+            const totalTimeFormatted = formatTime(totalHours);
+            const overtimeFormatted = formatTime(overtime);
+
             // Формируем результат
+            const transportDetails = transportItems.length ? transportItems.map(item => `${item.name}: ${item.cost} руб`).join("<br>  ") + `<br>  Сумма: ${transportCost} руб` : "Нет";
+            const equipmentDetails = equipmentItems.length ? equipmentItems.map(item => `${item.name}: ${item.cost} руб`).join("<br>  ") + `<br>  Сумма: ${equipmentCost} руб` : "Нет";
+
             const result = `
-                Проект: ${project}<br>
-                Сотрудник: ${firstName} ${lastName} (${position})<br>
-                Общая продолжительность смены: ${totalHours.toFixed(2)} ч<br>
-                Переработка: ${overtime.toFixed(2)} ч<br>
-                Стоимость базовой смены: ${baseShiftCost} руб<br>
-                Стоимость переработки: ${overtimeTotalCost.toFixed(2)} руб<br>
-                Погрузка/разгрузка: ${loadingCost} руб<br>
-                Такси/транспорт: ${transportCost} руб<br>
-                Доп. оборудование: ${equipmentCost} руб<br>
-                <strong>Итоговая стоимость: ${totalCost.toFixed(2)} руб</strong>
+                <div class="section">
+                    <strong>Проект:</strong> ${project} (${startTime.toLocaleString()} - ${endTime.toLocaleString()})
+                </div>
+                <div class="section">
+                    <strong>Сотрудник:</strong> ${firstName} ${lastName} (${position})
+                </div>
+                <div class="section">
+                    <strong>Общая продолжительность смены:</strong> ${totalTimeFormatted}
+                </div>
+                <div class="section">
+                    <strong>Переработка:</strong> ${overtimeFormatted}${lunchBreak ? " (текущий обед)" : ""}
+                </div>
+                <div class="section">
+                    <strong>Стоимость базовой смены:</strong> ${baseShiftCost} руб
+                </div>
+                <div class="section">
+                    <strong>Стоимость переработки:</strong> ${overtimeTotalCost.toFixed(2)} руб<br>  ${overtimeBreakdown.join("<br>  ")}
+                </div>
+                <div class="section">
+                    <strong>Погрузка/разгрузка:</strong> ${loadingCost} руб
+                </div>
+                <div class="section">
+                    <strong>Такси/транспорт:</strong><br>  ${transportDetails}
+                </div>
+                <div class="section">
+                    <strong>Доп. оборудование:</strong><br>  ${equipmentDetails}
+                </div>
+                <div class="section">
+                    <strong>Итоговая стоимость:</strong> ${totalCost.toFixed(2)} руб
+                </div>
             `;
             resultDiv.innerHTML = result;
 
-            // Собираем данные для отправки боту
-            const equipment = [];
-            document.querySelectorAll(".equipment-item").forEach(item => {
-                const name = item.querySelector(".equipment-name").value;
-                const cost = parseFloat(item.querySelector(".equipment-cost").value) || 0;
-                if (name || cost) equipment.push({ name, cost });
-            });
-
+            // Данные для бота
             const data = {
                 project,
                 firstName,
@@ -207,8 +296,9 @@
                 overtimeCost,
                 lunchBreak,
                 loadingCost,
-                transportCost,
-                equipment,
+                transport: transportItems,
+                equipment: equipmentItems,
+                overtimeBreakdown: overtimeBreakdown,
                 totalCost: totalCost.toFixed(2)
             };
             tg.sendData(JSON.stringify(data));
