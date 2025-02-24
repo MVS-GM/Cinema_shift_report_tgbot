@@ -11,7 +11,7 @@
             background-color: #f0f0f0;
         }
         .container {
-            max-width: 400px;
+            max-width: 500px;
             margin: 0 auto;
             background: white;
             padding: 20px;
@@ -22,13 +22,25 @@
             display: block;
             margin: 10px 0 5px;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
+        }
+        .equipment-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .equipment-item input {
+            width: 70%;
+        }
+        .equipment-item button {
+            width: 20%;
+            padding: 5px;
         }
         button {
             width: 100%;
@@ -51,8 +63,21 @@
 <body>
     <div class="container">
         <h2>Подсчет стоимости смены</h2>
+
+        <label>Проект:</label>
+        <input type="text" id="project" placeholder="Название проекта">
+
+        <label>Имя:</label>
+        <input type="text" id="firstName" placeholder="Имя">
+
+        <label>Фамилия:</label>
+        <input type="text" id="lastName" placeholder="Фамилия">
+
+        <label>Должность:</label>
+        <input type="text" id="position" placeholder="Должность">
+
         <label>Длина базовой смены (часы):</label>
-        <input type="number" id="baseShift" min="1" step="1" placeholder="Например, 12">
+        <input type="number" id="baseShift" min="1" step="0.5" placeholder="Например, 8">
 
         <label>Начало смены:</label>
         <input type="datetime-local" id="startTime">
@@ -60,7 +85,30 @@
         <label>Конец смены:</label>
         <input type="datetime-local" id="endTime">
 
-        <button onclick="calculateShift()">Рассчитать</button>
+        <label>Стоимость смены (руб):</label>
+        <input type="number" id="shiftCost" min="0" step="1" placeholder="Например, 2000">
+
+        <label>Стоимость часа переработки (руб):</label>
+        <input type="number" id="overtimeCost" min="0" step="1" placeholder="Например, 300">
+
+        <label><input type="checkbox" id="lunchBreak"> Текущий обед (-1 час)</label>
+
+        <label>Погрузка/разгрузка (руб):</label>
+        <input type="number" id="loadingCost" min="0" step="1" placeholder="Стоимость">
+
+        <label>Такси, транспорт (руб):</label>
+        <input type="number" id="transportCost" min="0" step="1" placeholder="Стоимость">
+
+        <label>Дополнительное оборудование:</label>
+        <div id="equipmentList">
+            <div class="equipment-item">
+                <input type="text" class="equipment-name" placeholder="Название">
+                <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
+            </div>
+        </div>
+        <button onclick="addEquipment()">Добавить оборудование</button>
+
+        <button onclick="calculateShift()" style="margin-top: 20px;">Рассчитать</button>
         <div id="result"></div>
     </div>
 
@@ -70,14 +118,35 @@
         tg.ready();
         tg.expand();
 
+        function addEquipment() {
+            const equipmentList = document.getElementById("equipmentList");
+            const newItem = document.createElement("div");
+            newItem.className = "equipment-item";
+            newItem.innerHTML = `
+                <input type="text" class="equipment-name" placeholder="Название">
+                <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
+            `;
+            equipmentList.appendChild(newItem);
+        }
+
         function calculateShift() {
+            const project = document.getElementById("project").value;
+            const firstName = document.getElementById("firstName").value;
+            const lastName = document.getElementById("lastName").value;
+            const position = document.getElementById("position").value;
             const baseShift = parseFloat(document.getElementById("baseShift").value);
             const startTime = new Date(document.getElementById("startTime").value);
             const endTime = new Date(document.getElementById("endTime").value);
+            const shiftCost = parseFloat(document.getElementById("shiftCost").value);
+            const overtimeCost = parseFloat(document.getElementById("overtimeCost").value);
+            const lunchBreak = document.getElementById("lunchBreak").checked;
+            const loadingCost = parseFloat(document.getElementById("loadingCost").value) || 0;
+            const transportCost = parseFloat(document.getElementById("transportCost").value) || 0;
             const resultDiv = document.getElementById("result");
 
-            if (!baseShift || isNaN(startTime) || isNaN(endTime)) {
-                resultDiv.innerHTML = "Пожалуйста, заполните все поля корректно.";
+            // Валидация
+            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || isNaN(startTime) || isNaN(endTime)) {
+                resultDiv.innerHTML = "Пожалуйста, заполните все обязательные поля корректно.";
                 return;
             }
 
@@ -86,26 +155,61 @@
                 return;
             }
 
-            // Разница в миллисекундах
-            const diffMs = endTime - startTime;
-            const totalHours = diffMs / (1000 * 60 * 60); // Переводим в часы
+            // Расчет времени
+            let diffMs = endTime - startTime;
+            let totalHours = diffMs / (1000 * 60 * 60);
+            if (lunchBreak) totalHours -= 1; // Уменьшаем на 1 час, если обед
             const overtime = totalHours > baseShift ? totalHours - baseShift : 0;
 
-            // Форматируем результат
-            const result = `
-                Общая продолжительность смены: ${totalHours.toFixed(2)} ч<br>
-                Переработка: ${overtime.toFixed(2)} ч
-            `;
+            // Расчет стоимости
+            const baseShiftCost = shiftCost;
+            const overtimeTotalCost = overtime * overtimeCost;
+            let equipmentCost = 0;
+            document.querySelectorAll(".equipment-cost").forEach(input => {
+                equipmentCost += parseFloat(input.value) || 0;
+            });
+            const totalCost = baseShiftCost + overtimeTotalCost + loadingCost + transportCost + equipmentCost;
 
+            // Формируем результат
+            const result = `
+                Проект: ${project}<br>
+                Сотрудник: ${firstName} ${lastName} (${position})<br>
+                Общая продолжительность смены: ${totalHours.toFixed(2)} ч<br>
+                Переработка: ${overtime.toFixed(2)} ч<br>
+                Стоимость базовой смены: ${baseShiftCost} руб<br>
+                Стоимость переработки: ${overtimeTotalCost.toFixed(2)} руб<br>
+                Погрузка/разгрузка: ${loadingCost} руб<br>
+                Такси/транспорт: ${transportCost} руб<br>
+                Доп. оборудование: ${equipmentCost} руб<br>
+                <strong>Итоговая стоимость: ${totalCost.toFixed(2)} руб</strong>
+            `;
             resultDiv.innerHTML = result;
 
-            // Отправляем данные боту (опционально)
+            // Собираем данные для отправки боту
+            const equipment = [];
+            document.querySelectorAll(".equipment-item").forEach(item => {
+                const name = item.querySelector(".equipment-name").value;
+                const cost = parseFloat(item.querySelector(".equipment-cost").value) || 0;
+                if (name || cost) equipment.push({ name, cost });
+            });
+
             const data = {
-                baseShift: baseShift,
+                project,
+                firstName,
+                lastName,
+                position,
+                baseShift,
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
                 totalHours: totalHours.toFixed(2),
-                overtime: overtime.toFixed(2)
+                overtime: overtime.toFixed(2),
+                shiftCost,
+                overtimeCost,
+                lunchBreak,
+                loadingCost,
+                transportCost,
+                equipment,
+                totalCost: totalCost.toFixed(2)
             };
             tg.sendData(JSON.stringify(data));
         }
