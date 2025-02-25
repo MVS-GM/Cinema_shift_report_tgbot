@@ -69,6 +69,9 @@
             background-color: #0088cc;
             color: white;
         }
+        .tab.hidden {
+            display: none;
+        }
         .tab-content {
             display: none;
         }
@@ -80,9 +83,14 @@
             padding: 10px;
             background-color: #f9f9f9;
             border-radius: 5px;
+        }
+        #historyList .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
         }
-        #historyList .history-item:hover {
+        #historyList .history-item:hover .history-header {
             background-color: #eee;
         }
         #historyList .history-details {
@@ -93,15 +101,48 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        #result, #historyList .history-details {
+        #historyList .history-actions {
+            display: flex;
+            gap: 10px;
+        }
+        #historyList .action-btn {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        #historyList .delete-btn {
+            background-color: #ff4444;
+        }
+        #historyList .delete-btn:hover {
+            background-color: #cc0000;
+        }
+        #historyList .edit-btn {
+            background-color: #ffbb00;
+        }
+        #historyList .edit-btn:hover {
+            background-color: #cc8800;
+        }
+        #historyList .copy-btn {
+            background-color: #00cc00;
+        }
+        #historyList .copy-btn:hover {
+            background-color: #009900;
+        }
+        #edit .save-btn {
+            background-color: #ffbb00;
+        }
+        #edit .save-btn:hover {
+            background-color: #cc8800;
+        }
+        #result, #editResult, #historyList .history-details {
             font-size: 16px;
             line-height: 1.5;
         }
-        #result strong, #historyList strong {
+        #result strong, #editResult strong, #historyList strong {
             font-weight: bold;
             color: #333;
         }
-        #result .section, #historyList .section {
+        #result .section, #editResult .section, #historyList .section {
             margin-bottom: 15px;
         }
     </style>
@@ -112,6 +153,7 @@
         <div class="tabs">
             <div class="tab active" onclick="showTab('calculation')">Подсчет</div>
             <div class="tab" onclick="showTab('history')">История подсчетов</div>
+            <div class="tab hidden" id="editTab" onclick="showTab('edit')">Редактирование</div>
         </div>
 
         <div id="calculation" class="tab-content active">
@@ -154,7 +196,7 @@
                     <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
                 </div>
             </div>
-            <button onclick="addTransport()">Добавить транспорт</button>
+            <button onclick="addTransport('transportList')">Добавить транспорт</button>
 
             <label>Дополнительное оборудование:</label>
             <div id="equipmentList">
@@ -163,10 +205,65 @@
                     <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
                 </div>
             </div>
-            <button onclick="addEquipment()">Добавить оборудование</button>
+            <button onclick="addEquipment('equipmentList')">Добавить оборудование</button>
 
             <button onclick="calculateShift()" style="margin-top: 20px;">Рассчитать</button>
             <div id="result"></div>
+        </div>
+
+        <div id="edit" class="tab-content">
+            <label>Проект:</label>
+            <input type="text" id="editProject" placeholder="Название проекта">
+
+            <label>Имя:</label>
+            <input type="text" id="editFirstName" placeholder="Имя">
+
+            <label>Фамилия:</label>
+            <input type="text" id="editLastName" placeholder="Фамилия">
+
+            <label>Должность:</label>
+            <input type="text" id="editPosition" placeholder="Должность">
+
+            <label>Длина базовой смены (часы):</label>
+            <input type="number" id="editBaseShift" min="1" step="0.5" placeholder="Например, 10">
+
+            <label>Начало смены:</label>
+            <input type="datetime-local" id="editStartTime">
+
+            <label>Конец смены:</label>
+            <input type="datetime-local" id="editEndTime">
+
+            <label>Стоимость смены (руб):</label>
+            <input type="number" id="editShiftCost" min="0" step="1" placeholder="Например, 18000">
+
+            <label>Стоимость часа переработки (руб):</label>
+            <input type="number" id="editOvertimeCost" min="0" step="1" placeholder="Например, 3500">
+
+            <label><input type="checkbox" id="editLunchBreak"> Текущий обед (+1 час переработки)</label>
+
+            <label>Погрузка/разгрузка (руб):</label>
+            <input type="number" id="editLoadingCost" min="0" step="1" placeholder="Стоимость">
+
+            <label>Такси/транспорт:</label>
+            <div id="editTransportList">
+                <div class="item">
+                    <input type="text" class="transport-name" placeholder="Название">
+                    <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
+            </div>
+            <button onclick="addTransport('editTransportList')">Добавить транспорт</button>
+
+            <label>Дополнительное оборудование:</label>
+            <div id="editEquipmentList">
+                <div class="item">
+                    <input type="text" class="equipment-name" placeholder="Название">
+                    <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
+            </div>
+            <button onclick="addEquipment('editEquipmentList')">Добавить оборудование</button>
+
+            <button class="save-btn" onclick="saveEdit()" style="margin-top: 20px;">Сохранить изменения</button>
+            <div id="editResult"></div>
         </div>
 
         <div id="history" class="tab-content">
@@ -179,9 +276,10 @@
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        let currentEditIndex = null;
 
-        function addTransport() {
-            const transportList = document.getElementById("transportList");
+        function addTransport(listId) {
+            const transportList = document.getElementById(listId);
             const newItem = document.createElement("div");
             newItem.className = "item";
             newItem.innerHTML = `
@@ -191,8 +289,8 @@
             transportList.appendChild(newItem);
         }
 
-        function addEquipment() {
-            const equipmentList = document.getElementById("equipmentList");
+        function addEquipment(listId) {
+            const equipmentList = document.getElementById(listId);
             const newItem = document.createElement("div");
             newItem.className = "item";
             newItem.innerHTML = `
@@ -211,6 +309,11 @@
         function formatDate(date) {
             const d = new Date(date);
             return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatDateTime(date) {
+            const d = new Date(date);
+            return d.toISOString().slice(0, 16);
         }
 
         function calculateOvertimeCost(overtime, baseRate) {
@@ -242,8 +345,24 @@
 
         function saveToHistory(data) {
             let history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
-            history.unshift(data); // Добавляем в начало
+            history.unshift(data);
             localStorage.setItem('shiftHistory', JSON.stringify(history));
+        }
+
+        function updateHistory(index, data) {
+            let history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
+            history[index] = data;
+            localStorage.setItem('shiftHistory', JSON.stringify(history));
+            loadHistory();
+        }
+
+        function deleteFromHistory(index) {
+            if (confirm("Вы уверены, что хотите удалить эту запись?")) {
+                let history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
+                history.splice(index, 1);
+                localStorage.setItem('shiftHistory', JSON.stringify(history));
+                loadHistory();
+            }
         }
 
         function loadHistory() {
@@ -255,14 +374,112 @@
                 item.className = 'history-item';
                 const title = `${entry.project}_${formatDate(entry.startTime)}_${entry.firstName} ${entry.lastName}_${entry.totalCost} руб`;
                 item.innerHTML = `
-                    ${title}
+                    <div class="history-header" onclick="toggleDetails(${index})">${title}</div>
+                    <div class="history-actions">
+                        <button class="action-btn edit-btn" onclick="editEntry(${index}); event.stopPropagation();">Изменить</button>
+                        <button class="action-btn copy-btn" onclick="copyEntry(${index}); event.stopPropagation();">Копировать</button>
+                        <button class="action-btn delete-btn" onclick="deleteFromHistory(${index}); event.stopPropagation();">Удалить</button>
+                    </div>
                     <div class="history-details" id="details-${index}">${formatReport(entry)}</div>
                 `;
-                item.onclick = () => {
-                    const details = document.getElementById(`details-${index}`);
-                    details.style.display = details.style.display === 'block' ? 'none' : 'block';
-                };
                 historyList.appendChild(item);
+            });
+        }
+
+        function toggleDetails(index) {
+            const details = document.getElementById(`details-${index}`);
+            details.style.display = details.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function editEntry(index) {
+            const history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
+            const entry = history[index];
+            currentEditIndex = index;
+            fillEditForm(entry);
+            document.getElementById('editTab').classList.remove('hidden');
+            showTab('edit');
+        }
+
+        function copyEntry(index) {
+            const history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
+            const entry = history[index];
+            fillForm(entry);
+            showTab('calculation');
+        }
+
+        function fillForm(data) {
+            document.getElementById("project").value = data.project;
+            document.getElementById("firstName").value = data.firstName;
+            document.getElementById("lastName").value = data.lastName;
+            document.getElementById("position").value = data.position;
+            document.getElementById("baseShift").value = data.baseShift;
+            document.getElementById("startTime").value = formatDateTime(data.startTime);
+            document.getElementById("endTime").value = formatDateTime(data.endTime);
+            document.getElementById("shiftCost").value = data.shiftCost;
+            document.getElementById("overtimeCost").value = data.overtimeCost;
+            document.getElementById("lunchBreak").checked = data.lunchBreak;
+            document.getElementById("loadingCost").value = data.loadingCost;
+
+            const transportList = document.getElementById("transportList");
+            transportList.innerHTML = '';
+            data.transport.forEach(item => {
+                const newItem = document.createElement("div");
+                newItem.className = "item";
+                newItem.innerHTML = `
+                    <input type="text" class="transport-name" value="${item.name}">
+                    <input type="number" class="transport-cost" min="0" step="1" value="${item.cost}">
+                `;
+                transportList.appendChild(newItem);
+            });
+
+            const equipmentList = document.getElementById("equipmentList");
+            equipmentList.innerHTML = '';
+            data.equipment.forEach(item => {
+                const newItem = document.createElement("div");
+                newItem.className = "item";
+                newItem.innerHTML = `
+                    <input type="text" class="equipment-name" value="${item.name}">
+                    <input type="number" class="equipment-cost" min="0" step="1" value="${item.cost}">
+                `;
+                equipmentList.appendChild(newItem);
+            });
+        }
+
+        function fillEditForm(data) {
+            document.getElementById("editProject").value = data.project;
+            document.getElementById("editFirstName").value = data.firstName;
+            document.getElementById("editLastName").value = data.lastName;
+            document.getElementById("editPosition").value = data.position;
+            document.getElementById("editBaseShift").value = data.baseShift;
+            document.getElementById("editStartTime").value = formatDateTime(data.startTime);
+            document.getElementById("editEndTime").value = formatDateTime(data.endTime);
+            document.getElementById("editShiftCost").value = data.shiftCost;
+            document.getElementById("editOvertimeCost").value = data.overtimeCost;
+            document.getElementById("editLunchBreak").checked = data.lunchBreak;
+            document.getElementById("editLoadingCost").value = data.loadingCost;
+
+            const transportList = document.getElementById("editTransportList");
+            transportList.innerHTML = '';
+            data.transport.forEach(item => {
+                const newItem = document.createElement("div");
+                newItem.className = "item";
+                newItem.innerHTML = `
+                    <input type="text" class="transport-name" value="${item.name}">
+                    <input type="number" class="transport-cost" min="0" step="1" value="${item.cost}">
+                `;
+                transportList.appendChild(newItem);
+            });
+
+            const equipmentList = document.getElementById("editEquipmentList");
+            equipmentList.innerHTML = '';
+            data.equipment.forEach(item => {
+                const newItem = document.createElement("div");
+                newItem.className = "item";
+                newItem.innerHTML = `
+                    <input type="text" class="equipment-name" value="${item.name}">
+                    <input type="number" class="equipment-cost" min="0" step="1" value="${item.cost}">
+                `;
+                equipmentList.appendChild(newItem);
             });
         }
 
@@ -437,6 +654,101 @@
             };
             saveToHistory(data);
             tg.sendData(JSON.stringify(data));
+        }
+
+        function saveEdit() {
+            const project = document.getElementById("editProject").value;
+            const firstName = document.getElementById("editFirstName").value;
+            const lastName = document.getElementById("editLastName").value;
+            const position = document.getElementById("editPosition").value;
+            let baseShift = parseFloat(document.getElementById("editBaseShift").value);
+            const startTime = new Date(document.getElementById("editStartTime").value);
+            const endTime = new Date(document.getElementById("editEndTime").value);
+            const shiftCost = parseFloat(document.getElementById("editShiftCost").value);
+            const overtimeCost = parseFloat(document.getElementById("editOvertimeCost").value);
+            const lunchBreak = document.getElementById("editLunchBreak").checked;
+            const loadingCost = parseFloat(document.getElementById("editLoadingCost").value) || 0;
+            const resultDiv = document.getElementById("editResult");
+
+            // Валидация
+            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || isNaN(startTime) || isNaN(endTime)) {
+                resultDiv.innerHTML = "Пожалуйста, заполните все обязательные поля корректно.";
+                return;
+            }
+            if (endTime <= startTime) {
+                resultDiv.innerHTML = "Время окончания должно быть позже начала.";
+                return;
+            }
+
+            // Проверка ночной смены (16:00 - 03:59)
+            const startHour = startTime.getHours();
+            const isNightShift = (startHour >= 16 || startHour < 4);
+            if (isNightShift) {
+                baseShift -= 1;
+            }
+
+            // Расчет времени
+            const diffMs = endTime - startTime;
+            const totalHours = diffMs / (1000 * 60 * 60);
+            let overtime = totalHours > baseShift ? totalHours - baseShift : 0;
+            if (lunchBreak) overtime += 1;
+
+            // Расчет стоимости с прогрессивной шкалой
+            const baseShiftCost = shiftCost;
+            const overtimeResult = calculateOvertimeCost(overtime, overtimeCost);
+            const overtimeTotalCost = overtimeResult.totalCost;
+            const overtimeBreakdown = overtimeResult.breakdown;
+
+            let transportCost = 0;
+            const transportItems = [];
+            document.querySelectorAll("#editTransportList .item").forEach(item => {
+                const name = item.querySelector(".transport-name").value;
+                const cost = parseFloat(item.querySelector(".transport-cost").value) || 0;
+                if (name || cost) {
+                    transportItems.push({ name, cost });
+                    transportCost += cost;
+                }
+            });
+
+            let equipmentCost = 0;
+            const equipmentItems = [];
+            document.querySelectorAll("#editEquipmentList .item").forEach(item => {
+                const name = item.querySelector(".equipment-name").value;
+                const cost = parseFloat(item.querySelector(".equipment-cost").value) || 0;
+                if (name || cost) {
+                    equipmentItems.push({ name, cost });
+                    equipmentCost += cost;
+                }
+            });
+
+            const totalCost = baseShiftCost + overtimeTotalCost + loadingCost + transportCost + equipmentCost;
+
+            // Данные для обновления
+            const data = {
+                project,
+                firstName,
+                lastName,
+                position,
+                baseShift,
+                isNightShift,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                totalHours: totalHours.toFixed(2),
+                overtime: overtime.toFixed(2),
+                shiftCost,
+                overtimeCost,
+                lunchBreak,
+                loadingCost,
+                transport: transportItems,
+                equipment: equipmentItems,
+                overtimeBreakdown: overtimeBreakdown,
+                totalCost: totalCost.toFixed(2)
+            };
+
+            updateHistory(currentEditIndex, data);
+            document.getElementById('editTab').classList.add('hidden');
+            showTab('history');
+            currentEditIndex = null;
         }
     </script>
 </body>
