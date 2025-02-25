@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подсчет стоимости смены</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Подсчет стоимости смены</h2>
+        <div class="tabs">
+            <div class="tab active" data-tab="calculation">Подсчет</div>
+            <div class="tab" data-tab="history">История подсчетов</div>
+            <div class="tab hidden" id="editTab" data-tab="edit">Редактирование</div>
+        </div>
+
+        <div id="calculation" class="tab-content active">
+            <label>Проект:</label>
+            <input type="text" id="project" placeholder="Название проекта">
+
+            <label>Имя:</label>
+            <input type="text" id="firstName" placeholder="Имя">
+
+            <label>Фамилия:</label>
+            <input type="text" id="lastName" placeholder="Фамилия">
+
+            <label>Должность:</label>
+            <input type="text" id="position" placeholder="Должность">
+
+            <label>Длина базовой смены (часы):</label>
+            <input type="number" id="baseShift" min="1" step="0.5" placeholder="Например, 10">
+
+            <label>Начало смены:</label>
+            <input type="datetime-local" id="startTime">
+
+            <label>Конец смены:</label>
+            <input type="datetime-local" id="endTime">
+
+            <label>Стоимость смены (руб):</label>
+            <input type="number" id="shiftCost" min="0" step="1" placeholder="Например, 18000">
+
+            <label>Стоимость часа переработки (руб):</label>
+            <input type="number" id="overtimeCost" min="0" step="1" placeholder="Например, 3500">
+
+            <label><input type="checkbox" id="lunchBreak"> Текущий обед (+1 час переработки)</label>
+
+            <label>Погрузка/разгрузка (руб):</label>
+            <input type="number" id="loadingCost" min="0" step="1" placeholder="Стоимость">
+
+            <label>Такси/транспорт:</label>
+            <div id="transportList">
+                <div class="item">
+                    <input type="text" class="transport-name" placeholder="Название">
+                    <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
+            </div>
+            <button id="addTransportBtn">Добавить транспорт</button>
+
+            <label>Дополнительное оборудование:</label>
+            <div id="equipmentList">
+                <div class="item">
+                    <input type="text" class="equipment-name" placeholder="Название">
+                    <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
+            </div>
+            <button id="addEquipmentBtn">Добавить оборудование</button>
+
+            <button id="calculateBtn" style="margin-top: 20px;">Рассчитать</button>
+            <div id="result"></div>
+        </div>
+
+        <div id="edit" class="tab-content">
+            <label>Проект:</label>
+            <input type="text" id="editProject" placeholder="Название проекта">
+
+            <label>Имя:</label>
+            <input type="text" id="editFirstName" placeholder="Имя">
+
+            <label>Фамилия:</label>
+            <input type="text" id="editLastName" placeholder="Фамилия">
+
+            <label>Должность:</label>
+            <input type="text" id="editPosition" placeholder="Должность">
+
+            <label>Длина базовой смены (часы):</label>
+            <input type="number" id="editBaseShift" min="1" step="0.5" placeholder="Например, 10">
+
+            <label>Начало смены:</label>
+            <input type="datetime-local" id="editStartTime">
+
+            <label>Конец смены:</label>
+            <input type="datetime-local" id="editEndTime">
+
+            <label>Стоимость смены (руб):</label>
+            <input type="number" id="editShiftCost" min="0" step="1" placeholder="Например, 18000">
+
+            <label>Стоимость часа переработки (руб):</label>
+            <input type="number" id="editOvertimeCost" min="0" step="1" placeholder="Например, 3500">
+
+            <label><input type="checkbox" id="editLunchBreak"> Текущий обед (+1 час переработки)</label>
+
+            <label>Погрузка/разгрузка (руб):</label>
+            <input type="number" id="editLoadingCost" min="0" step="1" placeholder="Стоимость">
+
+            <label>Такси/транспорт:</label>
+            <div id="editTransportList">
+                <div class="item">
+                    <input type="text" class="transport-name" placeholder="Название">
+                    <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
+            </div>
+            <button id="editAddTransportBtn">Добавить транспорт</button>
+
+            <label>Дополнительное оборудование:</label>
+            <div id="editEquipmentList">
+                <div class="item">
+                    <input type="text" class="equipment-name" placeholder="Название">
+                    <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
+            </div>
+            <button id="editAddEquipmentBtn">Добавить оборудование</button>
+
+            <button class="save-btn" id="saveEditBtn" style="margin-top: 20px;">Сохранить изменения</button>
+            <div id="editResult"></div>
+        </div>
+
+        <div id="history" class="tab-content">
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
