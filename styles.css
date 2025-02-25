@@ -1,0 +1,140 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f0f0f0;
+}
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+label {
+    display: block;
+    margin: 10px 0 5px;
+}
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+.item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.item input {
+    width: 70%;
+}
+.item button {
+    width: 20%;
+    padding: 5px;
+}
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #006699;
+}
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.tab {
+    padding: 10px;
+    background-color: #ddd;
+    cursor: pointer;
+    border-radius: 5px 5px 0 0;
+}
+.tab.active {
+    background-color: #0088cc;
+    color: white;
+}
+.tab.hidden {
+    display: none;
+}
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+}
+#historyList .history-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+#historyList .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+#historyList .history-item:hover .history-header {
+    background-color: #eee;
+}
+#historyList .history-details {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+#historyList .history-actions {
+    display: flex;
+    gap: 10px;
+}
+#historyList .action-btn {
+    width: auto;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+#historyList .delete-btn {
+    background-color: #ff4444;
+}
+#historyList .delete-btn:hover {
+    background-color: #cc0000;
+}
+#historyList .edit-btn {
+    background-color: #ffbb00;
+}
+#historyList .edit-btn:hover {
+    background-color: #cc8800;
+}
+#historyList .copy-btn {
+    background-color: #00cc00;
+}
+#historyList .copy-btn:hover {
+    background-color: #009900;
+}
+#edit .save-btn {
+    background-color: #ffbb00;
+}
+#edit .save-btn:hover {
+    background-color: #cc8800;
+}
+#result, #editResult, #historyList .history-details {
+    font-size: 16px;
+    line-height: 1.5;
+}
+#result strong, #editResult strong, #historyList strong {
+    font-weight: bold;
+    color: #333;
+}
+#result .section, #editResult .section, #historyList .section {
+    margin-bottom: 15px;
+}
