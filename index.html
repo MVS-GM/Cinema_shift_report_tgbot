@@ -54,16 +54,54 @@
         button:hover {
             background-color: #006699;
         }
-        #result {
-            margin-top: 20px;
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px;
+            background-color: #ddd;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #0088cc;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        #historyList .history-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #historyList .history-item:hover {
+            background-color: #eee;
+        }
+        #historyList .history-details {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #result, #historyList .history-details {
             font-size: 16px;
             line-height: 1.5;
         }
-        #result strong {
+        #result strong, #historyList strong {
             font-weight: bold;
             color: #333;
         }
-        #result .section {
+        #result .section, #historyList .section {
             margin-bottom: 15px;
         }
     </style>
@@ -71,59 +109,69 @@
 <body>
     <div class="container">
         <h2>Подсчет стоимости смены</h2>
-
-        <label>Проект:</label>
-        <input type="text" id="project" placeholder="Название проекта">
-
-        <label>Имя:</label>
-        <input type="text" id="firstName" placeholder="Имя">
-
-        <label>Фамилия:</label>
-        <input type="text" id="lastName" placeholder="Фамилия">
-
-        <label>Должность:</label>
-        <input type="text" id="position" placeholder="Должность">
-
-        <label>Длина базовой смены (часы):</label>
-        <input type="number" id="baseShift" min="1" step="0.5" placeholder="Например, 10">
-
-        <label>Начало смены:</label>
-        <input type="datetime-local" id="startTime">
-
-        <label>Конец смены:</label>
-        <input type="datetime-local" id="endTime">
-
-        <label>Стоимость смены (руб):</label>
-        <input type="number" id="shiftCost" min="0" step="1" placeholder="Например, 18000">
-
-        <label>Стоимость часа переработки (руб):</label>
-        <input type="number" id="overtimeCost" min="0" step="1" placeholder="Например, 3500">
-
-        <label><input type="checkbox" id="lunchBreak"> Текущий обед (+1 час переработки)</label>
-
-        <label>Погрузка/разгрузка (руб):</label>
-        <input type="number" id="loadingCost" min="0" step="1" placeholder="Стоимость">
-
-        <label>Такси/транспорт:</label>
-        <div id="transportList">
-            <div class="item">
-                <input type="text" class="transport-name" placeholder="Название">
-                <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
-            </div>
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('calculation')">Подсчет</div>
+            <div class="tab" onclick="showTab('history')">История подсчетов</div>
         </div>
-        <button onclick="addTransport()">Добавить транспорт</button>
 
-        <label>Дополнительное оборудование:</label>
-        <div id="equipmentList">
-            <div class="item">
-                <input type="text" class="equipment-name" placeholder="Название">
-                <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
+        <div id="calculation" class="tab-content active">
+            <label>Проект:</label>
+            <input type="text" id="project" placeholder="Название проекта">
+
+            <label>Имя:</label>
+            <input type="text" id="firstName" placeholder="Имя">
+
+            <label>Фамилия:</label>
+            <input type="text" id="lastName" placeholder="Фамилия">
+
+            <label>Должность:</label>
+            <input type="text" id="position" placeholder="Должность">
+
+            <label>Длина базовой смены (часы):</label>
+            <input type="number" id="baseShift" min="1" step="0.5" placeholder="Например, 10">
+
+            <label>Начало смены:</label>
+            <input type="datetime-local" id="startTime">
+
+            <label>Конец смены:</label>
+            <input type="datetime-local" id="endTime">
+
+            <label>Стоимость смены (руб):</label>
+            <input type="number" id="shiftCost" min="0" step="1" placeholder="Например, 18000">
+
+            <label>Стоимость часа переработки (руб):</label>
+            <input type="number" id="overtimeCost" min="0" step="1" placeholder="Например, 3500">
+
+            <label><input type="checkbox" id="lunchBreak"> Текущий обед (+1 час переработки)</label>
+
+            <label>Погрузка/разгрузка (руб):</label>
+            <input type="number" id="loadingCost" min="0" step="1" placeholder="Стоимость">
+
+            <label>Такси/транспорт:</label>
+            <div id="transportList">
+                <div class="item">
+                    <input type="text" class="transport-name" placeholder="Название">
+                    <input type="number" class="transport-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
             </div>
-        </div>
-        <button onclick="addEquipment()">Добавить оборудование</button>
+            <button onclick="addTransport()">Добавить транспорт</button>
 
-        <button onclick="calculateShift()" style="margin-top: 20px;">Рассчитать</button>
-        <div id="result"></div>
+            <label>Дополнительное оборудование:</label>
+            <div id="equipmentList">
+                <div class="item">
+                    <input type="text" class="equipment-name" placeholder="Название">
+                    <input type="number" class="equipment-cost" min="0" step="1" placeholder="Стоимость">
+                </div>
+            </div>
+            <button onclick="addEquipment()">Добавить оборудование</button>
+
+            <button onclick="calculateShift()" style="margin-top: 20px;">Рассчитать</button>
+            <div id="result"></div>
+        </div>
+
+        <div id="history" class="tab-content">
+            <div id="historyList"></div>
+        </div>
     </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -160,6 +208,11 @@
             return `${h} ч ${m} мин`;
         }
 
+        function formatDate(date) {
+            const d = new Date(date);
+            return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         function calculateOvertimeCost(overtime, baseRate) {
             let totalCost = 0;
             let breakdown = [];
@@ -177,6 +230,79 @@
                 breakdown.push(`${(overtime - 13).toFixed(2)} ч × ${baseRate * 4} руб/ч (400%) = ${((overtime - 13) * baseRate * 4).toFixed(2)} руб`);
             }
             return { totalCost, breakdown };
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            if (tabId === 'history') loadHistory();
+        }
+
+        function saveToHistory(data) {
+            let history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
+            history.unshift(data); // Добавляем в начало
+            localStorage.setItem('shiftHistory', JSON.stringify(history));
+        }
+
+        function loadHistory() {
+            const historyList = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
+            historyList.innerHTML = '';
+            history.forEach((entry, index) => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                const title = `${entry.project}_${formatDate(entry.startTime)}_${entry.firstName} ${entry.lastName}_${entry.totalCost} руб`;
+                item.innerHTML = `
+                    ${title}
+                    <div class="history-details" id="details-${index}">${formatReport(entry)}</div>
+                `;
+                item.onclick = () => {
+                    const details = document.getElementById(`details-${index}`);
+                    details.style.display = details.style.display === 'block' ? 'none' : 'block';
+                };
+                historyList.appendChild(item);
+            });
+        }
+
+        function formatReport(data) {
+            const totalTimeFormatted = formatTime(data.totalHours);
+            const overtimeFormatted = formatTime(data.overtime);
+            const transportDetails = data.transport.length ? data.transport.map(item => `${item.name}: ${item.cost} руб`).join("<br>  ") + `<br>  Сумма: ${data.transport.reduce((sum, item) => sum + item.cost, 0)} руб` : "Нет";
+            const equipmentDetails = data.equipment.length ? data.equipment.map(item => `${item.name}: ${item.cost} руб`).join("<br>  ") + `<br>  Сумма: ${data.equipment.reduce((sum, item) => sum + item.cost, 0)} руб` : "Нет";
+            return `
+                <div class="section">
+                    <strong>Проект:</strong> ${data.project} (${new Date(data.startTime).toLocaleString()} - ${new Date(data.endTime).toLocaleString()})${data.isNightShift ? " (ночная смена)" : ""}
+                </div>
+                <div class="section">
+                    <strong>Сотрудник:</strong> ${data.firstName} ${data.lastName} (${data.position})
+                </div>
+                <div class="section">
+                    <strong>Общая продолжительность смены:</strong> ${totalTimeFormatted}
+                </div>
+                <div class="section">
+                    <strong>Переработка:</strong> ${overtimeFormatted}${data.lunchBreak ? " (текущий обед)" : ""}
+                </div>
+                <div class="section">
+                    <strong>Стоимость базовой смены:</strong> ${data.shiftCost} руб${data.isNightShift ? " (ночная смена, базовая смена уменьшена на 1 час)" : ""}
+                </div>
+                <div class="section">
+                    <strong>Стоимость переработки:</strong> ${calculateOvertimeCost(data.overtime, data.overtimeCost).totalCost.toFixed(2)} руб<br>  ${data.overtimeBreakdown.join("<br>  ")}
+                </div>
+                <div class="section">
+                    <strong>Погрузка/разгрузка:</strong> ${data.loadingCost} руб
+                </div>
+                <div class="section">
+                    <strong>Такси/транспорт:</strong><br>  ${transportDetails}
+                </div>
+                <div class="section">
+                    <strong>Доп. оборудование:</strong><br>  ${equipmentDetails}
+                </div>
+                <div class="section">
+                    <strong>Итоговая стоимость:</strong> ${data.totalCost} руб
+                </div>
+            `;
         }
 
         function calculateShift() {
@@ -207,7 +333,7 @@
             const startHour = startTime.getHours();
             const isNightShift = (startHour >= 16 || startHour < 4);
             if (isNightShift) {
-                baseShift -= 1; // Уменьшаем базовую смену на 1 час
+                baseShift -= 1;
             }
 
             // Расчет времени
@@ -288,7 +414,7 @@
             `;
             resultDiv.innerHTML = result;
 
-            // Данные для бота
+            // Данные для сохранения и отправки боту
             const data = {
                 project,
                 firstName,
@@ -309,6 +435,7 @@
                 overtimeBreakdown: overtimeBreakdown,
                 totalCost: totalCost.toFixed(2)
             };
+            saveToHistory(data);
             tg.sendData(JSON.stringify(data));
         }
     </script>
