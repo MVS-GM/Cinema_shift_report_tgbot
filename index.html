@@ -311,9 +311,14 @@
             return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
         }
 
-        function formatDateTime(date) {
+        function formatDateTimeForInput(date) {
             const d = new Date(date);
-            return d.toISOString().slice(0, 16);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
         function calculateOvertimeCost(overtime, baseRate) {
@@ -413,8 +418,8 @@
             document.getElementById("lastName").value = data.lastName;
             document.getElementById("position").value = data.position;
             document.getElementById("baseShift").value = data.baseShift;
-            document.getElementById("startTime").value = formatDateTime(data.startTime);
-            document.getElementById("endTime").value = formatDateTime(data.endTime);
+            document.getElementById("startTime").value = formatDateTimeForInput(data.startTime);
+            document.getElementById("endTime").value = formatDateTimeForInput(data.endTime);
             document.getElementById("shiftCost").value = data.shiftCost;
             document.getElementById("overtimeCost").value = data.overtimeCost;
             document.getElementById("lunchBreak").checked = data.lunchBreak;
@@ -451,8 +456,8 @@
             document.getElementById("editLastName").value = data.lastName;
             document.getElementById("editPosition").value = data.position;
             document.getElementById("editBaseShift").value = data.baseShift;
-            document.getElementById("editStartTime").value = formatDateTime(data.startTime);
-            document.getElementById("editEndTime").value = formatDateTime(data.endTime);
+            document.getElementById("editStartTime").value = formatDateTimeForInput(data.startTime); // Используем локальное время из истории
+            document.getElementById("editEndTime").value = formatDateTimeForInput(data.endTime);     // Используем локальное время из истории
             document.getElementById("editShiftCost").value = data.shiftCost;
             document.getElementById("editOvertimeCost").value = data.overtimeCost;
             document.getElementById("editLunchBreak").checked = data.lunchBreak;
@@ -528,8 +533,8 @@
             const lastName = document.getElementById("lastName").value;
             const position = document.getElementById("position").value;
             let baseShift = parseFloat(document.getElementById("baseShift").value);
-            const startTime = new Date(document.getElementById("startTime").value);
-            const endTime = new Date(document.getElementById("endTime").value);
+            const startTimeInput = document.getElementById("startTime").value;
+            const endTimeInput = document.getElementById("endTime").value;
             const shiftCost = parseFloat(document.getElementById("shiftCost").value);
             const overtimeCost = parseFloat(document.getElementById("overtimeCost").value);
             const lunchBreak = document.getElementById("lunchBreak").checked;
@@ -537,10 +542,13 @@
             const resultDiv = document.getElementById("result");
 
             // Валидация
-            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || isNaN(startTime) || isNaN(endTime)) {
+            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || !startTimeInput || !endTimeInput) {
                 resultDiv.innerHTML = "Пожалуйста, заполните все обязательные поля корректно.";
                 return;
             }
+
+            const startTime = new Date(startTimeInput);
+            const endTime = new Date(endTimeInput);
             if (endTime <= startTime) {
                 resultDiv.innerHTML = "Время окончания должно быть позже начала.";
                 return;
@@ -639,8 +647,8 @@
                 position,
                 baseShift,
                 isNightShift,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
+                startTime: startTimeInput, // Сохраняем как введено в поле
+                endTime: endTimeInput,     // Сохраняем как введено в поле
                 totalHours: totalHours.toFixed(2),
                 overtime: overtime.toFixed(2),
                 shiftCost,
@@ -741,9 +749,9 @@
                 position,
                 baseShift,
                 isNightShift,
-                startTime: originalStartTime, // Сохраняем исходное время начала
-                endTime: originalEndTime,     // Сохраняем исходное время конца
-                totalHours: originalTotalHours.toFixed(2), // Сохраняем исходную продолжительность
+                startTime: originalStartTime,
+                endTime: originalEndTime,
+                totalHours: originalTotalHours.toFixed(2),
                 overtime: overtime.toFixed(2),
                 shiftCost,
                 overtimeCost,
