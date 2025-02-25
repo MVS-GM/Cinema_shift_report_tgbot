@@ -321,6 +321,17 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
+        function formatDateTimeForDisplay(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const seconds = String(d.getSeconds()).padStart(2, '0');
+            return `${day}.${month}.${year}, ${hours}:${minutes}:${seconds}`;
+        }
+
         function calculateOvertimeCost(overtime, baseRate) {
             let totalCost = 0;
             let breakdown = [];
@@ -495,7 +506,7 @@
             const equipmentDetails = data.equipment.length ? data.equipment.map(item => `${item.name}: ${item.cost} руб`).join("<br>  ") + `<br>  Сумма: ${data.equipment.reduce((sum, item) => sum + item.cost, 0)} руб` : "Нет";
             return `
                 <div class="section">
-                    <strong>Проект:</strong> ${data.project} (${new Date(data.startTime).toLocaleString()} - ${new Date(data.endTime).toLocaleString()})${data.isNightShift ? " (ночная смена)" : ""}
+                    <strong>Проект:</strong> ${data.project} (${formatDateTimeForDisplay(data.startTime)} - ${formatDateTimeForDisplay(data.endTime)})${data.isNightShift ? " (ночная смена)" : ""}
                 </div>
                 <div class="section">
                     <strong>Сотрудник:</strong> ${data.firstName} ${data.lastName} (${data.position})
@@ -607,7 +618,7 @@
 
             const result = `
                 <div class="section">
-                    <strong>Проект:</strong> ${project} (${startTime.toLocaleString()} - ${endTime.toLocaleString()})${isNightShift ? " (ночная смена)" : ""}
+                    <strong>Проект:</strong> ${project} (${formatDateTimeForDisplay(startTime)} - ${formatDateTimeForDisplay(endTime)})${isNightShift ? " (ночная смена)" : ""}
                 </div>
                 <div class="section">
                     <strong>Сотрудник:</strong> ${firstName} ${lastName} (${position})
@@ -660,6 +671,8 @@
                 overtimeBreakdown: overtimeBreakdown,
                 totalCost: totalCost.toFixed(2)
             };
+
+            // Явное сохранение в историю
             saveToHistory(data);
             tg.sendData(JSON.stringify(data));
         }
@@ -742,8 +755,8 @@
                 position,
                 baseShift,
                 isNightShift,
-                startTime: startTimeInput, // Сохраняем введенное время
-                endTime: endTimeInput,     // Сохраняем введенное время
+                startTime: startTimeInput,
+                endTime: endTimeInput,
                 totalHours: totalHours.toFixed(2),
                 overtime: overtime.toFixed(2),
                 shiftCost,
