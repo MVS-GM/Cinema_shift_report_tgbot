@@ -14,7 +14,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // Привязка остальных событий
-document.getElementById('calculateBtn').addEventListener('click', calculateShift);
+document.getElementById('calculateBtn').addEventListener('click', () => calculateShift(saveToHistory, tg));
 document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
 document.getElementById('addTransportBtn').addEventListener('click', () => addTransport('transportList'));
 document.getElementById('addEquipmentBtn').addEventListener('click', () => addEquipment('equipmentList'));
@@ -26,7 +26,7 @@ function showTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
     document.getElementById(tabId).classList.add('active');
-    if (tabId === 'history') loadHistory();
+    if (tabId === 'history') loadHistory(editEntry, copyEntry, deleteFromHistory);
 }
 
 function editEntry(index) {
