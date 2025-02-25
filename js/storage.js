@@ -1,5 +1,5 @@
 import { formatReport } from './ui.js';
-import { editEntry, copyEntry } from './main.js';
+import { editEntry, copyEntry, deleteFromHistory } from './main.js';
 
 function saveToHistory(data) {
     let history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
@@ -11,7 +11,7 @@ function updateHistory(index, data) {
     let history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
     history[index] = data;
     localStorage.setItem('shiftHistory', JSON.stringify(history));
-    loadHistory();
+    loadHistory(editEntry, copyEntry, deleteFromHistory);
 }
 
 function deleteFromHistory(index) {
@@ -19,11 +19,11 @@ function deleteFromHistory(index) {
         let history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
         history.splice(index, 1);
         localStorage.setItem('shiftHistory', JSON.stringify(history));
-        loadHistory();
+        loadHistory(editEntry, copyEntry, deleteFromHistory);
     }
 }
 
-function loadHistory() {
+function loadHistory(editFn, copyFn, deleteFn) {
     const historyList = document.getElementById('historyList');
     const history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
     historyList.innerHTML = '';
@@ -34,14 +34,19 @@ function loadHistory() {
         item.innerHTML = `
             <div class="history-header" onclick="toggleDetails(${index})">${title}</div>
             <div class="history-actions">
-                <button class="action-btn edit-btn" onclick="editEntry(${index}); event.stopPropagation();">Изменить</button>
-                <button class="action-btn copy-btn" onclick="copyEntry(${index}); event.stopPropagation();">Копировать</button>
-                <button class="action-btn delete-btn" onclick="deleteFromHistory(${index}); event.stopPropagation();">Удалить</button>
+                <button class="action-btn edit-btn" onclick="window.editEntry(${index}); event.stopPropagation();">Изменить</button>
+                <button class="action-btn copy-btn" onclick="window.copyEntry(${index}); event.stopPropagation();">Копировать</button>
+                <button class="action-btn delete-btn" onclick="window.deleteFromHistory(${index}); event.stopPropagation();">Удалить</button>
             </div>
             <div class="history-details" id="details-${index}">${formatReport(entry)}</div>
         `;
         historyList.appendChild(item);
     });
+
+    // Делаем функции доступными в глобальной области для inline onclick
+    window.editEntry = editFn;
+    window.copyEntry = copyFn;
+    window.deleteFromHistory = deleteFn;
 }
 
 function toggleDetails(index) {
