@@ -1,6 +1,7 @@
 # Функционал index.html
 
 Web App для подсчета стоимости смены с локальным хранением данных и управлением историей.
+https://mvs-gm.github.io/Cinema_shift_report_tgbot/
 
 ## Вкладки
 
