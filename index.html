@@ -145,6 +145,13 @@
         #result .section, #editResult .section, #historyList .section {
             margin-bottom: 15px;
         }
+        .error {
+            border: 2px solid red;
+        }
+        .error-message {
+            color: red;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -227,7 +234,7 @@
             <label>Длина базовой смены (часы):</label>
             <input type="number" id="editbaseShift" min="1" step="0.5" placeholder="Например, 10">
 
-            <<|control704|>>Начало смены:</label>
+            <label>Начало смены:</label>
             <input type="datetime-local" id="editstartTime">
 
             <label>Конец смены:</label>
@@ -358,6 +365,7 @@
             document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
             document.getElementById(tabId).classList.add('active');
             if (tabId === 'history') loadHistory();
+            clearErrors();
         }
 
         function saveToHistory(data) {
@@ -484,7 +492,7 @@
                     <strong>Стоимость базовой смены:</strong> ${data.shiftCost} руб${data.isNightShift ? " (ночная смена, базовая смена уменьшена на 1 час)" : ""}
                 </div>
                 <div class="section">
-                    <strong>Стоимость переработки:</strong> ${calculateOvertimeCost(data.overtime, data.overtimeCost).totalCost.toFixed(2)} руб<br>  ${data.overtimeBreakdown.join("<br>  ")}
+                    <strong>Стоимость переработки:</strong> ${calculateOvertimeCost(parseFloat(data.overtime), data.overtimeCost).totalCost.toFixed(2)} руб<br>  ${data.overtimeBreakdown.join("<br>  ")}
                 </div>
                 <div class="section">
                     <strong>Погрузка/разгрузка:</strong> ${data.loadingCost} руб
@@ -501,7 +509,55 @@
             `;
         }
 
+        function clearErrors() {
+            document.querySelectorAll('input').forEach(input => input.classList.remove('error'));
+        }
+
+        function validateForm(prefix = '') {
+            const errors = [];
+            const fields = [
+                { id: `${prefix}project`, label: "Проект" },
+                { id: `${prefix}firstName`, label: "Имя" },
+                { id: `${prefix}lastName`, label: "Фамилия" },
+                { id: `${prefix}position`, label: "Должность" },
+                { id: `${prefix}baseShift`, label: "Длина базовой смены", numeric: true },
+                { id: `${prefix}startTime`, label: "Начало смены" },
+                { id: `${prefix}endTime`, label: "Конец смены" },
+                { id: `${prefix}shiftCost`, label: "Стоимость смены", numeric: true },
+                { id: `${prefix}overtimeCost`, label: "Стоимость переработки", numeric: true }
+            ];
+
+            clearErrors();
+
+            fields.forEach(field => {
+                const element = document.getElementById(field.id);
+                const value = field.numeric ? parseFloat(element.value) : element.value;
+                if (!value || (field.numeric && (isNaN(value) || value < 0))) {
+                    errors.push(`Поле "${field.label}" не заполнено или содержит некорректное значение.`);
+                    element.classList.add('error');
+                }
+            });
+
+            const startTime = new Date(document.getElementById(`${prefix}startTime`).value);
+            const endTime = new Date(document.getElementById(`${prefix}endTime`).value);
+            if (endTime <= startTime) {
+                errors.push("Время окончания должно быть позже времени начала.");
+                document.getElementById(`${prefix}startTime`).classList.add('error');
+                document.getElementById(`${prefix}endTime`).classList.add('error');
+            }
+
+            return errors;
+        }
+
         function calculateShift() {
+            const errors = validateForm('');
+            const resultDiv = document.getElementById("result");
+
+            if (errors.length > 0) {
+                resultDiv.innerHTML = errors.map(error => `<div class="error-message">${error}</div>`).join('');
+                return;
+            }
+
             const project = document.getElementById("project").value;
             const firstName = document.getElementById("firstName").value;
             const lastName = document.getElementById("lastName").value;
@@ -513,20 +569,9 @@
             const overtimeCost = parseFloat(document.getElementById("overtimeCost").value);
             const lunchBreak = document.getElementById("lunchBreak").checked;
             const loadingCost = parseFloat(document.getElementById("loadingCost").value) || 0;
-            const resultDiv = document.getElementById("result");
-
-            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || !startTimeInput || !endTimeInput) {
-                resultDiv.innerHTML = "Пожалуйста, заполните все обязательные поля корректно.";
-                return;
-            }
 
             const startTime = new Date(startTimeInput);
             const endTime = new Date(endTimeInput);
-            if (endTime <= startTime) {
-                resultDiv.innerHTML = "Время окончания должно быть позже начала.";
-                return;
-            }
-
             const startHour = startTime.getHours();
             const isNightShift = (startHour >= 16 || startHour < 4);
             if (isNightShift) {
@@ -594,6 +639,14 @@
         }
 
         function saveEdit() {
+            const errors = validateForm('edit');
+            const resultDiv = document.getElementById("editResult");
+
+            if (errors.length > 0) {
+                resultDiv.innerHTML = errors.map(error => `<div class="error-message">${error}</div>`).join('');
+                return;
+            }
+
             const project = document.getElementById("editproject").value;
             const firstName = document.getElementById("editfirstName").value;
             const lastName = document.getElementById("editlastName").value;
@@ -605,20 +658,9 @@
             const overtimeCost = parseFloat(document.getElementById("editovertimeCost").value);
             const lunchBreak = document.getElementById("editlunchBreak").checked;
             const loadingCost = parseFloat(document.getElementById("editloadingCost").value) || 0;
-            const resultDiv = document.getElementById("editResult");
-
-            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || !startTimeInput || !endTimeInput) {
-                resultDiv.innerHTML = "Пожалуйста, заполните все обязательные поля корректно.";
-                return;
-            }
 
             const startTime = new Date(startTimeInput);
             const endTime = new Date(endTimeInput);
-            if (endTime <= startTime) {
-                resultDiv.innerHTML = "Время окончания должно быть позже начала.";
-                return;
-            }
-
             const startHour = startTime.getHours();
             const isNightShift = (startHour >= 16 || startHour < 4);
             if (isNightShift) {
