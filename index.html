@@ -662,8 +662,8 @@
             const lastName = document.getElementById("editLastName").value;
             const position = document.getElementById("editPosition").value;
             let baseShift = parseFloat(document.getElementById("editBaseShift").value);
-            const startTime = new Date(document.getElementById("editStartTime").value);
-            const endTime = new Date(document.getElementById("editEndTime").value);
+            const startTimeInput = document.getElementById("editStartTime").value;
+            const endTimeInput = document.getElementById("editEndTime").value;
             const shiftCost = parseFloat(document.getElementById("editShiftCost").value);
             const overtimeCost = parseFloat(document.getElementById("editOvertimeCost").value);
             const lunchBreak = document.getElementById("editLunchBreak").checked;
@@ -671,26 +671,36 @@
             const resultDiv = document.getElementById("editResult");
 
             // Валидация
-            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || isNaN(startTime) || isNaN(endTime)) {
+            if (!project || !firstName || !lastName || !position || !baseShift || !shiftCost || !overtimeCost || !startTimeInput || !endTimeInput) {
                 resultDiv.innerHTML = "Пожалуйста, заполните все обязательные поля корректно.";
                 return;
             }
+
+            const startTime = new Date(startTimeInput);
+            const endTime = new Date(endTimeInput);
             if (endTime <= startTime) {
                 resultDiv.innerHTML = "Время окончания должно быть позже начала.";
                 return;
             }
 
+            // Получаем исходные данные из истории
+            const history = JSON.parse(localStorage.getItem('shiftHistory') || '[]');
+            const originalData = history[currentEditIndex];
+
+            // Сохраняем исходные значения времени и продолжительности
+            const originalStartTime = originalData.startTime;
+            const originalEndTime = originalData.endTime;
+            const originalTotalHours = parseFloat(originalData.totalHours);
+
             // Проверка ночной смены (16:00 - 03:59)
-            const startHour = startTime.getHours();
+            const startHour = new Date(originalStartTime).getHours();
             const isNightShift = (startHour >= 16 || startHour < 4);
             if (isNightShift) {
                 baseShift -= 1;
             }
 
-            // Расчет времени
-            const diffMs = endTime - startTime;
-            const totalHours = diffMs / (1000 * 60 * 60);
-            let overtime = totalHours > baseShift ? totalHours - baseShift : 0;
+            // Используем исходную продолжительность и пересчитываем переработку
+            let overtime = originalTotalHours > baseShift ? originalTotalHours - baseShift : 0;
             if (lunchBreak) overtime += 1;
 
             // Расчет стоимости с прогрессивной шкалой
@@ -723,7 +733,7 @@
 
             const totalCost = baseShiftCost + overtimeTotalCost + loadingCost + transportCost + equipmentCost;
 
-            // Данные для обновления
+            // Данные для обновления с сохранением исходного времени
             const data = {
                 project,
                 firstName,
@@ -731,9 +741,9 @@
                 position,
                 baseShift,
                 isNightShift,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
-                totalHours: totalHours.toFixed(2),
+                startTime: originalStartTime, // Сохраняем исходное время начала
+                endTime: originalEndTime,     // Сохраняем исходное время конца
+                totalHours: originalTotalHours.toFixed(2), // Сохраняем исходную продолжительность
                 overtime: overtime.toFixed(2),
                 shiftCost,
                 overtimeCost,
