@@ -17,7 +17,7 @@ function calculateOvertimeCost(overtime, baseRate) {
     return { totalCost, breakdown };
 }
 
-function calculateShift() {
+function calculateShift(saveToHistory, tg) {
     const project = document.getElementById("project").value;
     const firstName = document.getElementById("firstName").value;
     const lastName = document.getElementById("lastName").value;
